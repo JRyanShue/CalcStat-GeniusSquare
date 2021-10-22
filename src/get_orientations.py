@@ -69,39 +69,44 @@ def longest_list(matrix):
 
 
 possible_move_counts = {}
+for i in range(len(pieces)):
+    possible_move_counts[i] = 0
 
+"""
+Given a board (with blocks on certain spots), figure out the number of permutations the pieces can be in and add to move_counts
+"""
+def iterate(board, move_counts):
 
-# Iterate through
-piece_i = 0
-for piece in pieces:
+    # Iterate through
+    piece_i = 0
+    for piece in pieces:
 
-    possible_move_counts[piece_i] = 0
+        moves = []
+        poss_rows = len(board) - len(piece) + 1
+        poss_columns = len(board[0]) - longest_list(piece) + 1
 
-    moves = []
-    poss_rows = len(board) - len(piece) + 1
-    poss_columns = len(board[0]) - longest_list(piece) + 1
+        for i in range(poss_rows):  # Cycle through rows
+            for j in range(poss_columns):  # Cycle through the possible columns in the row
 
-    for i in range(poss_rows):  # Cycle through rows
-        for j in range(poss_columns):  # Cycle through the possible columns in the row
-
-            # Does the piece work on the board (are there blockers?)?
-            # Check for overlaps of the piece's 1's and the 1's on the board
-            overlap = False
-            for row_i in range(len(piece)):
-                for square_i in range(len(piece[row_i])):
-                    if board[i + row_i][j + square_i] == 1 and piece[row_i][square_i] == 1:
-                        print('overlap on:', str(i + row_i) + ', ' + str(j + square_i))
-                        overlap = True
+                # Does the piece work on the board (are there blockers?)?
+                # Check for overlaps of the piece's 1's and the 1's on the board
+                overlap = False
+                for row_i in range(len(piece)):
+                    for square_i in range(len(piece[row_i])):
+                        if board[i + row_i][j + square_i] == 1 and piece[row_i][square_i] == 1:
+                            # print('overlap on:', str(i + row_i) + ', ' + str(j + square_i))
+                            overlap = True
+                            break
+                    if overlap:
                         break
                 if overlap:
-                    break
-            if overlap:
-                continue
+                    continue
 
-            possible_move_counts[piece_i] += 1
+                move_counts[piece_i] += 1
 
-    piece_i += 1
+        piece_i += 1
 
+iterate(board, possible_move_counts)
 
 print(possible_move_counts)
 
