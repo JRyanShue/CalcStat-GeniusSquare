@@ -75,3 +75,17 @@ for piece in pieces:
     index += 1
 
 print(possible_moves)
+
+possible_move_counts = {}
+
+for piece in possible_moves:
+    possible_move_counts[piece] = len(possible_moves[piece])
+
+print(possible_move_counts)
+
+
+# NEXT: Do the above for each of all possible boards. Then, see which pieces are overall easiest to play. 
+
+# Then, figure out an algorithm that can do the puzzle (just has to be good enough!) -- it will then be able to solve the puzzle instantaneously (time-based challenge)
+
+
