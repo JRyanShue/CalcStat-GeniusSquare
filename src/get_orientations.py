@@ -56,6 +56,7 @@ pieces = [
 possible_moves = {}
 
 board = np.zeros((6, 6))
+board[0][3] = 1
 
 def longest_list(matrix):
     longest_len = 0
@@ -67,10 +68,28 @@ def longest_list(matrix):
 # Iterate through
 index = 0
 for piece in pieces:
+
     moves = []
-    for i in range(len(board) - len(piece) + 1):  # Cycle through rows
-        for j in range(len(board[i]) - longest_list(piece) + 1):
+    poss_rows = len(board) - len(piece) + 1
+    poss_columns = len(board[0]) - longest_list(piece) + 1
+
+    for i in range(poss_rows):  # Cycle through rows
+        for j in range(poss_columns):  # Cycle through the possible columns in the row
+            # Does the piece work on the board (are there blockers?)?
+            # Check for overlaps of the piece's 1's and the 1's on the board
+            overlap = False
+            for row_i in range(len(piece)):
+                for square_i in range(len(piece[row_i])):
+                    if board[i + row_i][j + square_i] == 1 and piece[row_i][square_i] == 1:
+                        print('overlap on:', str(i + row_i) + ', ' + str(j + square_i))
+                        overlap = True
+                        break
+                if overlap:
+                    break
+            if overlap:
+                continue
             moves.append((i, j))
+
     possible_moves[index] = moves
     index += 1
 
