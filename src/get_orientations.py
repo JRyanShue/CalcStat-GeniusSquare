@@ -165,6 +165,33 @@ possible_move_counts = {}
 for i in range(len(pieces)):
     possible_move_counts[i] = 0
 
+
+def get_possible_moves(board, piece):
+    moves = []
+    poss_rows = len(board) - len(piece) + 1
+    poss_columns = len(board[0]) - longest_list(piece) + 1
+
+    for i in range(poss_rows):  # Cycle through rows
+        for j in range(poss_columns):  # Cycle through the possible columns in the row
+
+            # Does the piece work on the board (are there blockers?)?
+            # Check for overlaps of the piece's 1's and the 1's on the board
+            overlap = False
+            for row_i in range(len(piece)):
+                for square_i in range(len(piece[row_i])):
+                    if board[i + row_i][j + square_i] == 1 and piece[row_i][square_i] == 1:
+                        overlap = True
+                        break
+                if overlap:
+                    break
+            if overlap:
+                continue
+
+            moves.append((i, j))
+
+    return moves
+
+
 """
 Given a board (with blocks on certain spots), figure out the number of permutations the pieces can be in and add to move_counts
 """
@@ -208,6 +235,17 @@ def rotate_90(combinations):
             rotated_combination.append((blocker[1], EDGE_LENGTH - blocker[0] - 1))
         rotated_combinations.append(rotated_combination)
     return rotated_combinations
+
+
+# Generate rotations given board
+def rotate_board_90(board):
+    new_board = np.zeros((6, 6))
+    for i in range(EDGE_LENGTH):
+        for j in range(EDGE_LENGTH):
+            if board[i][j] == 1:
+                new_board[j, EDGE_LENGTH - i - 1] = 1
+    return new_board
+
 
 # iterate
 class Iterator():
@@ -260,19 +298,62 @@ class Player():
     def get_random_board(self):
         return self.boards[random.randint(0, len(self.boards) - 1)]
 
-    def find_solution(self, board):
-        print('Currently solving:')
-        self.solve_board = np.array(board)
-        print(self.prettify_board(self.solve_board))
 
     def prettify_board(self, board):
         pretty_board = []
-        for i in board:
-            for j in i:
-                if j == 0:
-                    pretty_board[i][j] = ' '
+        for i in range(len(board)):
+            pretty_board.append([])
+            for j in range(len(board[i])):
+                if board[i][j] == 0:
+                    pretty_board[i].append(' ')
                 else:
-                    pretty_board[i][j] = 'X'
+                    pretty_board[i].append('X')
+        return pretty_board
+
+    
+    def print_pretty_board(self, board):
+        for i in self.prettify_board(board):
+            line = '| '
+            for j in i:
+                line += j + ' | '
+            print('-' * (len(line)-1))
+            print(line)
+        print('-' * (len(line)-1))
+
+
+    def find_solution(self, board):
+        print('Currently solving:')
+        self.solve_board = np.array(board)
+        self.print_pretty_board(self.solve_board)
+        self.print_pretty_board(rotate_board_90(self.solve_board))
+
+        # Piece indexes, from hardest to easiest to place
+        self.piece_heirarchy = [
+            4, 7, 6, 5, 8, 2, 3, 1, 0
+        ]
+
+        # Create list of pieces from hardest to easiest to place
+        self.pieces = []
+        for piece_i in range(len(pieces)):
+            self.pieces.append(pieces[self.piece_heirarchy[piece_i]])
+
+        # 0: No rotation or flipping (4 lines of symmetry), 1: Two rotations (2 lines of symmetry), 2: Four rotations (no symmetry), 3: Four rotations + flipping = 8 rotations
+        self.degrees_of_freedom = [
+            1, 2, 3, 3, 0, 1, 2, 1, 0
+        ]
+        # print(self.pieces)
+        
+        # Loop through pieces, placing piece in the first position. Rollback if later placement doesn't work
+        piece_placements = {}
+
+        # For all 4 rotations:
+        current_rotation = self.solve_board
+        for i in range(4):
+            print(get_possible_moves(current_rotation, self.pieces[0]))
+            current_rotation = rotate_board_90(current_rotation)
+
+        print(get_possible_moves(self.solve_board, self.pieces[0]))
+        print(get_possible_moves(rotate_board_90(self.solve_board), self.pieces[0]))
 
 
 solve_board = [
