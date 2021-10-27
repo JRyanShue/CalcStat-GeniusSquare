@@ -10,6 +10,9 @@ with priority on being closer to the top of the board.
 """
 
 import numpy as np
+import random
+
+from numpy.lib.polynomial import _binary_op_dispatcher
 # import pieces
 
 EDGE_LENGTH = 6
@@ -150,12 +153,6 @@ def find_combinations(dice, iteration):
         return combinations
 
 
-def get_all_default_boards():
-    global dice
-    all_boards = find_combinations(dice, 0)
-    return all_boards
-
-
 def longest_list(matrix):
     longest_len = 0
     for i in matrix:
@@ -202,8 +199,6 @@ def iterate(board, move_counts):
         piece_i += 1
 
 
-r0 = find_combinations(dice, 0)
-
 # Generate rotations
 def rotate_90(combinations):
     rotated_combinations = []
@@ -214,29 +209,84 @@ def rotate_90(combinations):
         rotated_combinations.append(rotated_combination)
     return rotated_combinations
 
-r1 = rotate_90(r0)
-r2 = rotate_90(r1)
-r3 = rotate_90(r2)
+# iterate
+class Iterator():
 
-blocker_combinations = r0 + r1 + r2 + r3
+    def __init__(self) -> None:
+        pass
 
-# Convert blocker combinations to boards of 1's and 0's
-boards = []
-for combination in blocker_combinations:
-    new_board = np.zeros((EDGE_LENGTH, EDGE_LENGTH))
-    for blocker in combination:
-        new_board[blocker[0], blocker[1]] = 1
-    print(new_board)
-    boards.append(new_board)
+    def iterate(self):
+        r0 = find_combinations(dice, 0)
+        r1 = rotate_90(r0)
+        r2 = rotate_90(r1)
+        r3 = rotate_90(r2)
 
-# Iterate through all boards to find number of possible moves
-for board in boards:
-    iterate(board, possible_move_counts)
+        blocker_combinations = r0 + r1 + r2 + r3
 
-print(possible_move_counts)
+        # Convert blocker combinations to boards of 1's and 0's
+        boards = []
+        for combination in blocker_combinations:
+            new_board = np.zeros((EDGE_LENGTH, EDGE_LENGTH))
+            for blocker in combination:
+                new_board[blocker[0], blocker[1]] = 1
+            boards.append(new_board)
 
-# NEXT: Do the above for each of all possible boards. Then, see which pieces are overall easiest to play. 
+        # Iterate through all boards to find number of possible moves
+        for board in boards:
+            iterate(board, possible_move_counts)
 
-# Then, figure out an algorithm that can do the puzzle (just has to be good enough!) -- it will then be able to solve the puzzle instantaneously (time-based challenge)
+        print(possible_move_counts)
+
+# iterator = Iterator()
+# iterator.iterate()
+
+# play the game
+class Player():
+
+    def __init__(self):
+        self.get_boards()
+
+    def get_boards(self):
+        global dice
+        blocker_combinations = find_combinations(dice, 0)
+        self.boards = []
+        for combination in blocker_combinations:
+            new_board = np.zeros((EDGE_LENGTH, EDGE_LENGTH))
+            for blocker in combination:
+                new_board[blocker[0], blocker[1]] = 1
+            self.boards.append(new_board)
+        return self.boards        
+
+    def get_random_board(self):
+        return self.boards[random.randint(0, len(self.boards) - 1)]
+
+    def find_solution(self, board):
+        print('Currently solving:')
+        self.solve_board = np.array(board)
+        print(self.prettify_board(self.solve_board))
+
+    def prettify_board(self, board):
+        pretty_board = []
+        for i in board:
+            for j in i:
+                if j == 0:
+                    pretty_board[i][j] = ' '
+                else:
+                    pretty_board[i][j] = 'X'
+
+
+solve_board = [
+    [1., 0., 0., 0., 0., 0.,],
+    [0., 1., 0., 0., 0., 0.,],
+    [0., 0., 0., 0., 0., 0.,],
+    [0., 0., 0., 1., 0., 0.,],
+    [0., 0., 0., 1., 0., 0.,],
+    [1., 1., 0., 0., 0., 1.,]
+    ]
+
+
+player = Player()
+# player.find_solution(player.get_random_board())
+player.find_solution(solve_board)
 
 
