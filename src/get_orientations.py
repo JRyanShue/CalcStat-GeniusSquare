@@ -12,6 +12,8 @@ with priority on being closer to the top of the board.
 import numpy as np
 # import pieces
 
+EDGE_LENGTH = 6
+
 # Dictionary of the pieces in the game, based on their base moves. Represent with matrix.
 pieces = [
 
@@ -50,15 +52,109 @@ pieces = [
         [1, 1],
         [1, 1]
     ],
+    # [
+    #     [1],
+    #     [1, 1, 1]
+    # ],
+    # [
+    #     [0, 1, 1],
+    #     [1, 1]
+    # ],
 
 ]
 
 possible_moves = {}
 
-board = np.zeros((6, 6))
+board = np.zeros((EDGE_LENGTH, EDGE_LENGTH))
 
 board[0][3] = 1
 board[1][3] = 1
+
+dice = [
+
+    # (row, column, frequency)
+    [
+        (3, 4),
+        (4, 3),
+        (4, 4),
+        (4, 5),
+        (5, 3),
+        (5, 4)
+    ],
+    [
+        (0, 3),
+        (1, 4),
+        (2, 4),
+        (2, 5),
+        (3, 5),
+        (5, 5)
+    ],
+    [
+        (1, 3),
+        (2, 2),
+        (2, 3),
+        (3, 2),
+        (3, 3),
+        (4, 2)
+    ],
+    [
+        (0, 0),
+        (2, 0),
+        (3, 0),
+        (3, 1),
+        (4, 1),
+        (5, 2)
+    ],
+    [
+        (0, 4),
+        (0, 4),
+        (1, 5),
+        (4, 0),
+        (5, 1),
+        (5, 1)
+    ],
+    [
+        (0, 1),
+        (0, 2),
+        (1, 0),
+        (1, 1),
+        (1, 2),
+        (2, 1)
+    ],
+    [
+        (0, 5, 3),
+        (5, 0, 3)
+    ]
+
+]
+
+
+all_boards = []
+
+# Generate all possible boards using recursion
+def find_combinations(dice, iteration):
+
+    combinations = []
+    next_die_possibilities = dice[iteration]
+    # del dice[0]  # shorten list - it will eventually reach length 0
+
+    # for outcome in next_die_possibilities:
+    if iteration + 1 >= len(dice):
+        for outcome in next_die_possibilities:
+            combinations.append([outcome])
+        return combinations
+    else:
+        for outcome in next_die_possibilities:
+            for combination in find_combinations(dice, iteration + 1):
+                combinations.append([outcome] + combination)
+        return combinations
+
+
+def get_all_default_boards():
+    global dice
+    all_boards = find_combinations(dice, 0)
+    return all_boards
+
 
 def longest_list(matrix):
     longest_len = 0
@@ -94,7 +190,6 @@ def iterate(board, move_counts):
                 for row_i in range(len(piece)):
                     for square_i in range(len(piece[row_i])):
                         if board[i + row_i][j + square_i] == 1 and piece[row_i][square_i] == 1:
-                            # print('overlap on:', str(i + row_i) + ', ' + str(j + square_i))
                             overlap = True
                             break
                     if overlap:
@@ -106,10 +201,39 @@ def iterate(board, move_counts):
 
         piece_i += 1
 
-iterate(board, possible_move_counts)
+
+r0 = find_combinations(dice, 0)
+
+# Generate rotations
+def rotate_90(combinations):
+    rotated_combinations = []
+    for combination in combinations:
+        rotated_combination = []
+        for blocker in combination:
+            rotated_combination.append((blocker[1], EDGE_LENGTH - blocker[0] - 1))
+        rotated_combinations.append(rotated_combination)
+    return rotated_combinations
+
+r1 = rotate_90(r0)
+r2 = rotate_90(r1)
+r3 = rotate_90(r2)
+
+blocker_combinations = r0 + r1 + r2 + r3
+
+# Convert blocker combinations to boards of 1's and 0's
+boards = []
+for combination in blocker_combinations:
+    new_board = np.zeros((EDGE_LENGTH, EDGE_LENGTH))
+    for blocker in combination:
+        new_board[blocker[0], blocker[1]] = 1
+    print(new_board)
+    boards.append(new_board)
+
+# Iterate through all boards to find number of possible moves
+for board in boards:
+    iterate(board, possible_move_counts)
 
 print(possible_move_counts)
-
 
 # NEXT: Do the above for each of all possible boards. Then, see which pieces are overall easiest to play. 
 
