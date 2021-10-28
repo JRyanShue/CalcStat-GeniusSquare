@@ -366,7 +366,7 @@ class Player():
         solution_board = self.solve_board.copy()
         self.print_pretty_board(solution_board)
 
-        wait_for_user = False
+        wait_for_user = True
         if wait_for_user:
             inp = input('Press any key and enter to start. ')
         
@@ -389,7 +389,7 @@ class Player():
         ]
 
         # Reversal experiment
-        Reverse = True
+        Reverse = False
         if Reverse:
             self.pieces.reverse()
             self.degrees_of_freedom.reverse()
@@ -532,7 +532,7 @@ start_time = None
 
 elapsed_times = []
 # Play 100 games, averaging the elapsed time
-for i in range(5):
+for i in range(1):
     player.find_solution(player.get_random_board())
     # player.find_solution(solve_board)
     end_time = time.time()
