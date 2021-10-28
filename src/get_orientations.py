@@ -359,7 +359,8 @@ class Player():
 
         print('Currently solving:')
         self.solve_board = np.array(board)
-        self.print_pretty_board(self.solve_board)
+        solution_board = self.solve_board.copy()
+        self.print_pretty_board(solution_board)
 
         # Piece indexes, from hardest to easiest to place
         self.piece_heirarchy = [
@@ -376,106 +377,124 @@ class Player():
             1, 2, 3, 3, 0, 1, 2, 1, 0
         ]
         
-        # Loop through pieces, placing piece in the first position. Rollback if later placement doesn't work
-        piece_possibilities = {}
-        piece_choices = {}
-        
-        for h in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
+        def search():
 
-            def find_possibilities(i):
+            # Loop through pieces, placing piece in the first position. Rollback if later placement doesn't work
+            piece_possibilities = {}
+            piece_choices = {}
+            solution_board = self.solve_board.copy()
 
-                # Based on piece's degrees of freedom, determine how many rotations have to be performed to get all possible moves
-                if self.degrees_of_freedom[i] == 0:
-                    num_rotations = 0
-                elif self.degrees_of_freedom[i] == 1:
-                    num_rotations = 1
-                else:
-                    num_rotations = 3
-                
-                possible_moves = []
+            for h in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
 
-                def find_moves(piece, possible_moves):
-                    # Get possible moves for given piece
-                    current_rotation = self.solve_board
-                    r0 = get_possible_moves(current_rotation, piece)
-                    if len(r0) > 0:
-                        # possible_moves.append(r0)
-                        possible_moves += r0
-                    for j in range(num_rotations):
-                        current_rotation = rotate_board_90(current_rotation)
-                        moves = get_possible_moves(current_rotation, piece)
-                        for k in range(3-j):
-                            moves = rotate_90(moves)
-                        if len(moves) > 0:
-                            # possible_moves.append(moves)
-                            possible_moves += moves
+                def find_possibilities(i):
 
-                    # print(possible_moves)
-                    # Pretty print possible boards
-                    # covered_squares = {}
-                    # for rotation in possible_moves:
-                    #     for move in rotation:
-                    #         covered_squares[i] = []
-                    #         board_with_piece = self.solve_board.copy()
-                    #         for square in move:
-                    #             covered_squares[i].append(square)
-                    #             board_with_piece[square[0], square[1]] = 1
-                    #         self.print_pretty_board(board_with_piece, covered_squares)
-
-                find_moves(self.pieces[i], possible_moves)
-
-                if self.degrees_of_freedom[i] == 3:
-                    # Flip piece
-                    find_moves([self.pieces[i][1], self.pieces[i][0]], possible_moves)
-
-                return possible_moves
-
-            piece_possibilities[h] = find_possibilities(h)
-
-            # Choose one piece possibility to go with
-            if piece_possibilities[h] and piece_possibilities[h][0]:
-                piece_choices[h] = piece_possibilities[h][0]  # two "[0]"'s because the lists are split by rotation
-                # Update board
-                self.block_spaces(self.solve_board, piece_choices[h])
-            else:
-                print('Unable to find a location to place: ' + str(h))
-                # Roll back
-                piece_choices[h] = []
-                print('Rolling back for all possible boards for h=' + str(h-1))
-                rb = h - 1
-                self.clear_spaces(self.solve_board, piece_choices[rb])
-                unresolved = True
-                piece_index = 0
-                while unresolved:
-                    piece_choices[rb] = piece_possibilities[rb][piece_index]
-                    self.block_spaces(self.solve_board, piece_choices[rb])
-                    print(self.solve_board)
-                    current_possibilities = find_possibilities(h)
-                    print(current_possibilities)
-                    if len(current_possibilities) > 0:
-                        unresolved = False
-                        piece_choices[h] = current_possibilities[0]
-                        self.block_spaces(self.solve_board, piece_choices[h])
-                        print('asdfd')
-                        break
-                    self.clear_spaces(self.solve_board, piece_choices[rb])
-                    piece_index += 1
-                    print('asdf')
-
+                    # Based on piece's degrees of freedom, determine how many rotations have to be performed to get all possible moves
+                    if self.degrees_of_freedom[i] == 0:
+                        num_rotations = 0
+                    elif self.degrees_of_freedom[i] == 1:
+                        num_rotations = 1
+                    else:
+                        num_rotations = 3
                     
+                    possible_moves = []
 
-            # print(get_possible_moves(self.solve_board, self.pieces[0]))
-            # print(get_possible_moves(rotate_board_90(self.solve_board), self.pieces[0]))
-        
-        # print(piece_choices)
+                    def find_moves(piece, possible_moves):
+                        # Get possible moves for given piece
+                        current_rotation = solution_board
+                        r0 = get_possible_moves(current_rotation, piece)
+                        if len(r0) > 0:
+                            # possible_moves.append(r0)
+                            possible_moves += r0
+                        for j in range(num_rotations):
+                            current_rotation = rotate_board_90(current_rotation)
+                            moves = get_possible_moves(current_rotation, piece)
+                            for k in range(3-j):
+                                moves = rotate_90(moves)
+                            if len(moves) > 0:
+                                # possible_moves.append(moves)
+                                possible_moves += moves
 
-        # Pretty print chosen board
-        covered_squares = {}
-        print(piece_choices)
-        for piece_choice_i in range(len(piece_choices)):
-            covered_squares[piece_choice_i] = piece_choices[piece_choice_i]
-        # print(covered_squares)
-        self.print_pretty_board(self.solve_board, covered_squares)
+                        # print(possible_moves)
+                        # Pretty print possible boards
+                        # covered_squares = {}
+                        # for rotation in possible_moves:
+                        #     for move in rotation:
+                        #         covered_squares[i] = []
+                        #         board_with_piece = solution_board.copy()
+                        #         for square in move:
+                        #             covered_squares[i].append(square)
+                        #             board_with_piece[square[0], square[1]] = 1
+                        #         self.print_pretty_board(board_with_piece, covered_squares)
+
+                    find_moves(self.pieces[i], possible_moves)
+
+                    if self.degrees_of_freedom[i] == 3:
+                        # Flip piece
+                        find_moves([self.pieces[i][1], self.pieces[i][0]], possible_moves)
+
+                    return possible_moves
+
+                piece_possibilities[h] = find_possibilities(h)
+
+                # Choose one piece possibility to go with
+                if piece_possibilities[h] and piece_possibilities[h][0]:
+                    piece_choices[h] = piece_possibilities[h][random.randint(0, len(piece_possibilities[h])-1)]  # two "[0]"'s because the lists are split by rotation
+                    # Update board
+                    self.block_spaces(solution_board, piece_choices[h])
+                else:
+                    # print('Unable to find a location to place: ' + str(h))
+                    piece_choices[h] = []
+
+                    # Roll back
+                    # print('Rolling back for all possible boards for h=' + str(h-1))
+                    # rb = h - 1
+                    # self.clear_spaces(solution_board, piece_choices[rb])
+                    # unresolved = True
+                    # piece_index = 0
+                    # while unresolved:
+                    #     piece_choices[rb] = piece_possibilities[rb][piece_index]
+                    #     self.block_spaces(solution_board, piece_choices[rb])
+                    #     print(solution_board)
+                    #     current_possibilities = find_possibilities(h)
+                    #     print(current_possibilities)
+                    #     if len(current_possibilities) > 0:
+                    #         unresolved = False
+                    #         piece_choices[h] = current_possibilities[0]
+                    #         self.block_spaces(solution_board, piece_choices[h])
+                    #         print('asdfd')
+                    #         break
+                    #     self.clear_spaces(solution_board, piece_choices[rb])
+                    #     piece_index += 1
+                    #     print('asdf')
+
+                    # Restart, shuffle
+
+                        
+
+                # print(get_possible_moves(solution_board, self.pieces[0]))
+                # print(get_possible_moves(rotate_board_90(solution_board), self.pieces[0]))
+            
+            # print(piece_choices)
+
+            # print(solution_board)
+            # print(0 in solution_board)
+
+            if 0 in solution_board:
+                return None
+            else:
+                # Pretty print chosen board
+                covered_squares = {}
+                # print(piece_choices)
+                for piece_choice_i in range(len(piece_choices)):
+                    covered_squares[piece_choice_i] = piece_choices[piece_choice_i]
+                # print(covered_squares)
+                self.print_pretty_board(solution_board, covered_squares)
+
+                return piece_choices
+            
+        while True:
+            if search() is not None:
+                break
 
 
 solve_board = [
