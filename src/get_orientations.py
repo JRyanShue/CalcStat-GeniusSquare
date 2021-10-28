@@ -349,7 +349,14 @@ class Player():
             print(line)
         print('-' * (len(line)-1))
 
+
     def find_solution(self, board):
+
+        # DFS
+        # Can be represented by a tree diagram!
+        # The order of layers matters
+        # Tree Search!
+
         print('Currently solving:')
         self.solve_board = np.array(board)
         self.print_pretty_board(self.solve_board)
@@ -372,8 +379,6 @@ class Player():
         # Loop through pieces, placing piece in the first position. Rollback if later placement doesn't work
         piece_possibilities = {}
         piece_choices = {}
-
-        # For all 4 rotations:
         
         for i in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
 
@@ -428,7 +433,14 @@ class Player():
                 self.block_spaces(self.solve_board, piece_choices[i])
             else:
                 print('Unable to find a location to place: ' + str(i))
+                # Roll back
                 piece_choices[i] = []
+                print('Rolling back for all possible boards for i=' + str(i-1))
+                i -= 1
+                self.clear_spaces(self.solve_board, piece_choices[i])
+                unresolved = True
+                for placement in piece_possibilities[i]:
+                    
 
             # print(get_possible_moves(self.solve_board, self.pieces[0]))
             # print(get_possible_moves(rotate_board_90(self.solve_board), self.pieces[0]))
@@ -437,6 +449,7 @@ class Player():
 
         # Pretty print chosen board
         covered_squares = {}
+        print(piece_choices)
         for piece_choice_i in range(len(piece_choices)):
             covered_squares[piece_choice_i] = piece_choices[piece_choice_i]
         # print(covered_squares)
