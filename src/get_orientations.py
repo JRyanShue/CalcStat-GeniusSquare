@@ -12,6 +12,7 @@ with priority on being closer to the top of the board.
 from math import pi
 import numpy as np
 import random
+import time
 
 from numpy.lib.polynomial import _binary_op_dispatcher
 # import pieces
@@ -357,10 +358,20 @@ class Player():
         # The order of layers matters
         # Tree Search!
 
+        # Keep track of sequences that have been tried before already
+        tried_sequences = []
+
         print('Currently solving:')
         self.solve_board = np.array(board)
         solution_board = self.solve_board.copy()
         self.print_pretty_board(solution_board)
+
+        wait_for_user = False
+        if wait_for_user:
+            inp = input('Press any key and enter to start. ')
+        
+        global start_time
+        start_time = time.time()
 
         # Piece indexes, from hardest to easiest to place
         self.piece_heirarchy = [
@@ -376,6 +387,12 @@ class Player():
         self.degrees_of_freedom = [
             1, 2, 3, 3, 0, 1, 2, 1, 0
         ]
+
+        # Reversal experiment
+        Reverse = True
+        if Reverse:
+            self.pieces.reverse()
+            self.degrees_of_freedom.reverse()
         
         def search():
 
@@ -480,6 +497,7 @@ class Player():
             # print(0 in solution_board)
 
             if 0 in solution_board:
+                # tried_sequences.append(piece_choices)
                 return None
             else:
                 # Pretty print chosen board
@@ -498,17 +516,28 @@ class Player():
 
 
 solve_board = [
-    [1., 0., 0., 0., 0., 0.,],
-    [0., 1., 0., 0., 0., 0.,],
+    [0., 0., 0., 0., 0., 1.,],
+    [0., 0., 0., 0., 1., 0.,],
+    [0., 1., 0., 1., 0., 0.,],
     [0., 0., 0., 0., 0., 0.,],
     [0., 0., 0., 1., 0., 0.,],
-    [0., 0., 0., 1., 0., 0.,],
-    [1., 1., 0., 0., 0., 1.,]
+    [0., 1., 1., 0., 0., 0.,]
     ]
 
 
 player = Player()
-# player.find_solution(player.get_random_board())
-player.find_solution(solve_board)
 
 
+start_time = None
+
+elapsed_times = []
+# Play 100 games, averaging the elapsed time
+for i in range(5):
+    player.find_solution(player.get_random_board())
+    # player.find_solution(solve_board)
+    end_time = time.time()
+    print('Time Elapsed:', end_time-start_time)
+    elapsed_times.append(end_time-start_time)
+
+print(elapsed_times)
+print(sum(elapsed_times)/len(elapsed_times))
