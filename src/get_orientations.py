@@ -9,6 +9,7 @@ and the contents of the pieces are as close to the top of the board (A row) and 
 with priority on being closer to the top of the board. 
 """
 
+from math import pi
 import numpy as np
 import random
 
@@ -187,7 +188,14 @@ def get_possible_moves(board, piece):
             if overlap:
                 continue
 
-            moves.append((i, j))
+            # Use starting coordinate to construct where every part of the piece will be placed on the board
+            piece_placement = []
+            for row_i in range(len(piece)):
+                for square_i in range(len(piece[row_i])):
+                    if piece[row_i][square_i] == 1:
+                        piece_placement.append((i + row_i, j + square_i))
+            
+            moves.append(piece_placement)
 
     return moves
 
@@ -298,8 +306,7 @@ class Player():
     def get_random_board(self):
         return self.boards[random.randint(0, len(self.boards) - 1)]
 
-
-    def prettify_board(self, board):
+    def prettify_board(self, board, color_code={}):
         pretty_board = []
         for i in range(len(board)):
             pretty_board.append([])
@@ -307,12 +314,34 @@ class Player():
                 if board[i][j] == 0:
                     pretty_board[i].append(' ')
                 else:
-                    pretty_board[i].append('X')
+                    found = False
+                    for value in color_code:
+                        for location in color_code[value]:
+                            if location == (i, j):
+                                pretty_board[i].append(str(value))
+                                found = True
+                                break
+                        if found:
+                            break
+                    if not found:     
+                        pretty_board[i].append('X')
         return pretty_board
 
-    
-    def print_pretty_board(self, board):
-        for i in self.prettify_board(board):
+    """
+    Block off squares according to spaces
+    """
+    def block_spaces(self, board, spaces):
+        for space in spaces:
+            board[space[0], space[1]] = 1
+
+    def clear_spaces(self, board, spaces):
+        for space in spaces:
+            board[space[0], space[1]] = 0
+
+
+    def print_pretty_board(self, board, color_code={}):  # 0: [(0, 0)]
+        # color_code format: {0: [(1, 2), (4, 3)], 1: [(5, 3), ...}
+        for i in self.prettify_board(board, color_code):
             line = '| '
             for j in i:
                 line += j + ' | '
@@ -320,12 +349,10 @@ class Player():
             print(line)
         print('-' * (len(line)-1))
 
-
     def find_solution(self, board):
         print('Currently solving:')
         self.solve_board = np.array(board)
         self.print_pretty_board(self.solve_board)
-        self.print_pretty_board(rotate_board_90(self.solve_board))
 
         # Piece indexes, from hardest to easiest to place
         self.piece_heirarchy = [
@@ -341,19 +368,79 @@ class Player():
         self.degrees_of_freedom = [
             1, 2, 3, 3, 0, 1, 2, 1, 0
         ]
-        # print(self.pieces)
         
         # Loop through pieces, placing piece in the first position. Rollback if later placement doesn't work
-        piece_placements = {}
+        piece_possibilities = {}
+        piece_choices = {}
 
         # For all 4 rotations:
-        current_rotation = self.solve_board
-        for i in range(4):
-            print(get_possible_moves(current_rotation, self.pieces[0]))
-            current_rotation = rotate_board_90(current_rotation)
+        
+        for i in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
 
-        print(get_possible_moves(self.solve_board, self.pieces[0]))
-        print(get_possible_moves(rotate_board_90(self.solve_board), self.pieces[0]))
+            # Based on piece's degrees of freedom, determine how many rotations have to be performed to get all possible moves
+            if self.degrees_of_freedom[i] == 0:
+                num_rotations = 0
+            elif self.degrees_of_freedom[i] == 1:
+                num_rotations = 1
+            else:
+                num_rotations = 3
+            
+            possible_moves = []
+
+            def find_moves(piece):
+                # Get possible moves for given piece
+                current_rotation = self.solve_board
+                r0 = get_possible_moves(current_rotation, piece)
+                if len(r0) > 0:
+                    possible_moves.append(r0)
+                for j in range(num_rotations):
+                    current_rotation = rotate_board_90(current_rotation)
+                    moves = get_possible_moves(current_rotation, piece)
+                    for k in range(3-j):
+                        moves = rotate_90(moves)
+                    if len(moves) > 0:
+                        possible_moves.append(moves)
+
+                # print(possible_moves)
+                # Pretty print possible boards
+                # covered_squares = {}
+                # for rotation in possible_moves:
+                #     for move in rotation:
+                #         covered_squares[i] = []
+                #         board_with_piece = self.solve_board.copy()
+                #         for square in move:
+                #             covered_squares[i].append(square)
+                #             board_with_piece[square[0], square[1]] = 1
+                #         self.print_pretty_board(board_with_piece, covered_squares)
+
+            find_moves(self.pieces[i])
+
+            if self.degrees_of_freedom[i] == 3:
+                # Flip piece
+                find_moves([self.pieces[i][1], self.pieces[i][0]])
+
+            piece_possibilities[i] = possible_moves
+
+            # Choose one piece possibility to go with
+            if piece_possibilities[i] and piece_possibilities[i][0]:
+                piece_choices[i] = piece_possibilities[i][0][0]  # two "[0]"'s because the lists are split by rotation
+                # Update board
+                self.block_spaces(self.solve_board, piece_choices[i])
+            else:
+                print('Unable to find a location to place: ' + str(i))
+                piece_choices[i] = []
+
+            # print(get_possible_moves(self.solve_board, self.pieces[0]))
+            # print(get_possible_moves(rotate_board_90(self.solve_board), self.pieces[0]))
+        
+        # print(piece_choices)
+
+        # Pretty print chosen board
+        covered_squares = {}
+        for piece_choice_i in range(len(piece_choices)):
+            covered_squares[piece_choice_i] = piece_choices[piece_choice_i]
+        # print(covered_squares)
+        self.print_pretty_board(self.solve_board, covered_squares)
 
 
 solve_board = [
